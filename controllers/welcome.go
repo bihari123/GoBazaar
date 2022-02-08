@@ -1,17 +1,16 @@
 package controllers
 
 import (
-	"GoBazaar/structs"
-	"fmt"
+	"GoBazaar/models"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func Welcome(c *gin.Context) structs.WelcomeMsg {
-	msg := structs.WelcomeMsg{
+func Welcome(c *gin.Context) {
+	msg := models.WelcomeMsg{
 		Msg: "Welcome to GoBazaar! Your own desi shop",
 	}
 
-	fmt.Println(msg)
-	return msg
+	c.IndentedJSON(http.StatusOK, msg)
 }

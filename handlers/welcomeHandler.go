@@ -7,6 +7,6 @@ import (
 )
 
 func HomeHandler(c *gin.Context) {
-	message := controllers.Welcome(c)
-	c.IndentedJSON(200, message)
+	controllers.Welcome(c)
+
 }
