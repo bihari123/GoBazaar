@@ -28,3 +28,30 @@
 # service ( real action )
 # model
 # database 
+
+
+
+## hit the api through terminal
+# add the user
+curl http://localhost:8080/user/register \
+     --include \
+     --header "Content-Type: application/json"  \
+     --request "POST" \
+     --data '{"first_name": "Tarun1","last_name": "thakur1","email":"thakur.tarun@gmail.com","contact": "949494949","city":"delhi","wallet_balance":90.30}'
+
+
+# add the merchant
+
+curl http://localhost:8080/merchant/register \
+     --include \
+     --header "Content-Type: application/json"  \
+     --request "POST" \
+     --data '{"company_name": "Cipher",,"email":"thakur.tarun@gmail.com","address": "kjskjskjskjs","discount_offered":10.0'
+
+
+     CompanyName     string
+	ID              uuid.UUID
+	Email           string
+	Address         string
+	DiscountOffered float64
+	Products        []Product

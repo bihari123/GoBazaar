@@ -17,9 +17,11 @@ const (
 	Purchase = "/purchase"
 	Update   = "/update"
 	Stock    = "/stock"
-	Chart    = "/cart"
+	Cart     = "/cart"
 	Id       = "/:id"
 )
+
+// ":<<name_of_variable>>"  /user/register
 
 func main() {
 	router := gin.Default()
@@ -27,7 +29,7 @@ func main() {
 	router.GET(Home, handlers.HomeHandler)
 
 	router.POST(User+Register, handlers.RegisterUser)
-	router.GET(User+Cart+Id, handlers.ShowUserChart)
+	router.GET(User+Cart+Id, handlers.ShowUserCart)
 	router.POST(User+Login, handlers.LoginUser)
 	router.POST(User+Logout, handlers.LogoutUser)
 	router.POST(User+Purchase, handlers.PurchaseUser)
