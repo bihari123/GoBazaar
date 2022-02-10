@@ -33,7 +33,8 @@ func UserLogin(c *gin.Context) {
 	for _, val := range UserList {
 		if val.Credentials.UserID == userCred.UserID && val.Credentials.UserPass == userCred.UserPass {
 			// if the user is found
-			c.IndentedJSON(http.StatusFound, val)
+			session = val
+			c.IndentedJSON(http.StatusFound, gin.H{"message": "User logged in. Session created"})
 			return
 
 		}
@@ -45,7 +46,12 @@ func UserLogin(c *gin.Context) {
 }
 
 func UserLogout(c *gin.Context) {
-
+	if session.Credentials.UserID != "" {
+		session = models.User{}
+		c.IndentedJSON(http.StatusOK, gin.H{"message": "Session deleted. User Logged out"})
+		return
+	}
+	c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Session empty. Plz Log in first"})
 }
 
 func UserCart(c *gin.Context) {
@@ -61,9 +67,41 @@ func UserCart(c *gin.Context) {
 }
 
 func UserPurchase(c *gin.Context) {
-	// know how much discount is being offered by the merchant on that product
+	// know how much discount is being offered by the merchant on that product, deduct the discount from the MRP
 	// deduct the amount from the user wallet
 	// reduce the stock of the product by one
-	//
+
+	var product models.Product
+	//var merchant models.Merchant
+	var discount float64
+
+	if session.Credentials.UserID != "" {
+		if err := c.BindJSON(&product); err != nil {
+			c.IndentedJSON(http.StatusBadRequest, err)
+		}
+
+		for _, val := range ProductList {
+			if val.ID == product.ID {
+				for _, m := range MerchantList {
+					if m.Credentials.UserID == product.MerchantID {
+						discount = m.DiscountOffered
+						netPrice := product.Price - discount
+						if session.WalletBalance > netPrice {
+							session.WalletBalance = session.WalletBalance - netPrice
+							c.IndentedJSON(http.StatusAccepted, gin.H{"message": "Thanks for the purchase. Plz visit again"})
+							return
+						}
+
+						c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "Not enough balance. Plz recharge your wallet"})
+						return
+
+					}
+				}
+			}
+		}
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "product not found"})
+	}
+
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Session Emplty.Plz log in first"})
 
 }

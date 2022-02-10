@@ -31,7 +31,7 @@ func main() {
 	router.POST(User+Register, handlers.RegisterUser)
 	router.GET(User+Cart+Id, handlers.ShowUserCart)
 	router.POST(User+Login, handlers.LoginUser)
-	router.POST(User+Logout, handlers.LogoutUser)
+	router.GET(User+Logout, handlers.LogoutUser)
 	router.POST(User+Purchase, handlers.PurchaseUser)
 
 	router.POST(Merchant+Register, handlers.RegisterMerchant)

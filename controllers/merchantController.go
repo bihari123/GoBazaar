@@ -15,6 +15,7 @@ func MerchantRegister(c *gin.Context) {
 		return
 	} else {
 		newMerchant.Credentials.UserID = uuid.New().String()
+		newMerchant.Credentials.UserPass = "Pass123"
 		MerchantList = append(MerchantList, newMerchant)
 	}
 
