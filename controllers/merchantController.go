@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func MerchantRegister(c *gin.Context) {
@@ -13,6 +14,7 @@ func MerchantRegister(c *gin.Context) {
 	if err := c.BindJSON(&newMerchant); err != nil {
 		return
 	} else {
+		newMerchant.Credentials.UserID = uuid.New().String()
 		MerchantList = append(MerchantList, newMerchant)
 	}
 
@@ -27,12 +29,15 @@ func MerchantLogin(c *gin.Context) {
 	}
 
 	// code to find the usesr in database
-
-	// if the user is found
-	// c.IndentedJSON(http.StatusCreated, userCred.UserID)
+	for _, val := range MerchantList {
+		if val.Credentials.UserID == merchantCred.UserID && val.Credentials.UserPass == merchantCred.UserPass {
+			// if the user is found
+			c.IndentedJSON(http.StatusCreated, merchantCred.UserID)
+		}
+	}
 
 	// if the user is not found
-	// c.IndentedJSON(http.StatusNotFound, gin.H("message":"enter valid credentials"))
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "enter valid credentials"})
 
 }
 
@@ -45,11 +50,11 @@ func MerchantUpload(c *gin.Context) {
 	var merchant models.Merchant
 	var found bool = false
 	if err := c.BindJSON(&product); err != nil {
-		return
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid input"})
 	}
 
 	for _, val := range MerchantList {
-		if val.ID == product.MerchantID {
+		if val.Credentials.UserID == product.MerchantID {
 			merchant = val
 			found = true
 		}
@@ -74,7 +79,7 @@ func MerchantUpdate(c *gin.Context) {
 	updatedPrice := product.Price
 
 	for _, val := range MerchantList {
-		if val.ID == product.MerchantID {
+		if val.Credentials.UserID == product.MerchantID {
 			merchant = val
 			found = true
 		}
@@ -84,7 +89,7 @@ func MerchantUpdate(c *gin.Context) {
 		for index, val := range merchant.Products {
 			if val.ID == product.ID {
 				merchant.Products[index].Price = updatedPrice
-				c.IndentedJSON(http.StatusCreated, merchant)
+				c.IndentedJSON(http.StatusFound, merchant)
 			}
 		}
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "product not found"})

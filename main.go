@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Home     = "/welcome"
+	Home     = "/"
 	User     = "/user"
 	Merchant = "/merchant"
 	Register = "/register"

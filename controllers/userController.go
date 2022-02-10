@@ -12,12 +12,10 @@ func UserRegister(c *gin.Context) {
 
 	var newUser models.User
 	if err := c.BindJSON(&newUser); err != nil {
-		return
+		c.IndentedJSON(http.StatusBadRequest, UserList)
 	} else {
-		newUser.ID, err = uuid.NewUUID()
-		if err != nil {
-			c.IndentedJSON(http.StatusBadRequest, UserList)
-		}
+		newUser.Credentials.UserID = uuid.New().String()
+		newUser.Credentials.UserPass = "Pass123"
 		UserList = append(UserList, newUser)
 	}
 
@@ -32,12 +30,17 @@ func UserLogin(c *gin.Context) {
 	}
 
 	// code to find the usesr in database
+	for _, val := range UserList {
+		if val.Credentials.UserID == userCred.UserID && val.Credentials.UserPass == userCred.UserPass {
+			// if the user is found
+			c.IndentedJSON(http.StatusFound, val)
+			return
 
-	// if the user is found
-	// c.IndentedJSON(http.StatusCreated, userCred.UserID)
+		}
+	}
 
 	// if the user is not found
-	// c.IndentedJSON(http.StatusNotFound, gin.H("message":"enter valid credentials"))
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
 
 }
 
@@ -62,4 +65,5 @@ func UserPurchase(c *gin.Context) {
 	// deduct the amount from the user wallet
 	// reduce the stock of the product by one
 	//
+
 }

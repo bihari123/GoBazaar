@@ -40,6 +40,15 @@ curl http://localhost:8080/user/register \
      --data '{"first_name": "Tarun1","last_name": "thakur1","email":"thakur.tarun@gmail.com","contact": "949494949","city":"delhi","wallet_balance":90.30}'
 
 
+## user login 
+curl http://localhost:8080/user/login \
+     --include \
+     --header "Content-Type: application/json"  \
+     --request "POST" \
+     --data '{"userId":"3d160cc5-2bda-43b3-9afb-b173aac1e2fb" ,"userPass":"Pass123"}'
+
+
+
 # add the merchant
 
 curl http://localhost:8080/merchant/register \
