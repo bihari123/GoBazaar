@@ -3,6 +3,7 @@ package controllers
 import (
 	"GoBazaar/models"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -103,5 +104,38 @@ func UserPurchase(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Session Emplty.Plz log in first"})
+
+}
+
+//make the user enter three letters
+//return the list of products whose name or description has those letters
+
+func UserSearch(c *gin.Context) {
+	letter1 := c.Param("letter1")
+	letter2 := c.Param("letter2")
+	letter3 := c.Param("letter3")
+
+	var searchResult []models.Product
+
+	for _, val := range ProductList {
+		if strings.Contains(val.Name, letter1) && strings.Contains(val.Name, letter2) && strings.Contains(val.Name, letter3) {
+			searchResult = append(searchResult, val)
+		}
+
+		if strings.Contains(val.Description, letter1) && strings.Contains(val.Description, letter2) && strings.Contains(val.Description, letter3) {
+			searchResult = append(searchResult, val)
+		}
+
+		if strings.Contains(val.Name, letter1) || strings.Contains(val.Name, letter2) || strings.Contains(val.Name, letter3) {
+			searchResult = append(searchResult, val)
+		}
+	}
+
+	if len(searchResult) > 0 {
+		c.IndentedJSON(http.StatusFound, searchResult)
+		return
+	} else {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "no result found"})
+	}
 
 }

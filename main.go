@@ -19,6 +19,7 @@ const (
 	Stock    = "/stock"
 	Cart     = "/cart"
 	Id       = "/:id"
+	Search   = "/search/:letter1/:letter2/:letter3"
 )
 
 // ":<<name_of_variable>>"  /user/register
@@ -32,6 +33,7 @@ func main() {
 	router.GET(User+Cart+Id, handlers.ShowUserCart)
 	router.POST(User+Login, handlers.LoginUser)
 	router.GET(User+Logout, handlers.LogoutUser)
+	router.GET(User+Search, handlers.SearchUser)
 	router.POST(User+Purchase, handlers.PurchaseUser)
 
 	router.POST(Merchant+Register, handlers.RegisterMerchant)

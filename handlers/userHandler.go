@@ -24,3 +24,7 @@ func PurchaseUser(c *gin.Context) {
 func ShowUserCart(c *gin.Context) {
 	controllers.UserCart(c)
 }
+
+func SearchUser(c *gin.Context) {
+	controllers.UserSearch(c)
+}

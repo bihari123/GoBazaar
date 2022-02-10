@@ -33,7 +33,9 @@ func MerchantLogin(c *gin.Context) {
 	for _, val := range MerchantList {
 		if val.Credentials.UserID == merchantCred.UserID && val.Credentials.UserPass == merchantCred.UserPass {
 			// if the user is found
+
 			c.IndentedJSON(http.StatusCreated, merchantCred.UserID)
+			return
 		}
 	}
 
