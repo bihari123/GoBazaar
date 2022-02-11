@@ -1,6 +1,11 @@
 package models
 
-type Cred struct {
-	UserID   string `json:"userId"`
-	UserPass string `json:"userPass"`
+type UserCred struct {
+	ID   int    `json:"Id"`
+	Pass string `json:"Pass"`
+}
+
+type MerchCred struct {
+	ID   int    `json:"Id"`
+	Pass string `json:"Pass"`
 }

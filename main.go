@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoBazaar/database"
 	"GoBazaar/handlers"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +23,9 @@ const (
 	Search   = "/search/:letter1/:letter2/:letter3"
 )
 
-// ":<<name_of_variable>>"  /user/register
-
+func init() {
+	database.RegisterDatabase()
+}
 func main() {
 	router := gin.Default()
 

@@ -9,5 +9,5 @@ type User struct {
 	WalletBalance float64 `json:"wallet_balance"`
 	//ID            string  `json:"id"`
 	//Password      string  `json:"password"`
-	Credentials Cred `json:"cred"`
+	Credentials UserCred `json:"cred"`
 }

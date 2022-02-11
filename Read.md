@@ -40,12 +40,12 @@ curl http://localhost:8080/user/register \
      --data '{"first_name": "Tarun1","last_name": "thakur1","email":"thakur.tarun@gmail.com","contact": "949494949","city":"delhi","wallet_balance":90.30}'
 
 
-# user/merchant login 
+# user login 
 curl http://localhost:8080/user/login \
      --include \
      --header "Content-Type: application/json"  \
      --request "POST" \
-     --data '{"userId":"5c1a35f1-601c-4b58-bbef-b5da84516a04" ,"userPass":"Pass123"}'
+     --data '{"Id":1 ,"Pass":"Pass123"}'
 
 # user logout
 curl http://localhost:8080/user/logout
@@ -64,5 +64,11 @@ curl http://localhost:8080/merchant/register \
      --include \
      --header "Content-Type: application/json"  \
      --request "POST" \
-     --data '{"company_name": "Cipher","email":"thakur.tarun@gmail.com","address": "kjskjskjskjs","discount_offered":10.0}'
+     --data '{"company_name": "Cipher","email":"thakur.tarun@gmail.com","merchant_address": "kjskjskjskjs","discount_offered":10.0}'
 
+# merchant login
+curl http://localhost:8080/merchant/login \
+     --include \
+     --header "Content-Type: application/json"  \
+     --request "POST" \
+     --data '{"Id":1 ,"Pass":"Pass123"}'

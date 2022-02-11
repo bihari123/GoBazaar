@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"GoBazaar/database"
 	"GoBazaar/models"
+	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func MerchantRegister(c *gin.Context) {
@@ -14,38 +16,77 @@ func MerchantRegister(c *gin.Context) {
 	if err := c.BindJSON(&newMerchant); err != nil {
 		return
 	} else {
-		newMerchant.Credentials.UserID = uuid.New().String()
-		newMerchant.Credentials.UserPass = "Pass123"
-		MerchantList = append(MerchantList, newMerchant)
+		//newMerchant.Credentials.ID = uuid.New().String()
+		newMerchant.Credentials.Pass = "Pass123"
+
+	}
+
+	result, err := database.Db.Exec("INSERT INTO merchant (company_name,email,merchant_address,discount_offered)VALUES(?,?,?,?)", newMerchant.CompanyName, newMerchant.Email, newMerchant.MerchantAddress, newMerchant.DiscountOffered)
+
+	if err != nil {
+
+		c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "error adding into database merchant"})
+		return
+	}
+	id, err := result.LastInsertId()
+
+	newMerchant.Credentials.ID = int(id)
+
+	result, err = database.Db.Exec("INSERT INTO merchCreds (id,pass) VALUES (?, ?)", newMerchant.Credentials.ID, newMerchant.Credentials.Pass)
+	if err != nil {
+		c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "error adding into database merchantCred"})
+		return
 	}
 
 	// code to insert into the database
-	c.IndentedJSON(http.StatusCreated, MerchantList)
+	c.IndentedJSON(http.StatusCreated, newMerchant)
 }
 
 func MerchantLogin(c *gin.Context) {
-	var merchantCred models.Cred
+	var merchantCred models.MerchCred
 	if err := c.BindJSON(&merchantCred); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, err)
 	}
 
 	// code to find the usesr in database
-	for _, val := range MerchantList {
-		if val.Credentials.UserID == merchantCred.UserID && val.Credentials.UserPass == merchantCred.UserPass {
-			// if the user is found
-
-			c.IndentedJSON(http.StatusCreated, merchantCred.UserID)
+	row := database.Db.QueryRow("SELECT * FROM merchCreds WHERE id = ? AND pass = \"?\"", merchantCred.ID, merchantCred.Pass)
+	fmt.Println(row)
+	if err := row.Scan(&merchantSession.Credentials.ID, &merchantSession.Credentials.Pass); err != nil {
+		if err == sql.ErrNoRows {
+			// if the user is not found
+			fmt.Println("\n\n\n")
+			fmt.Println(err)
+			fmt.Println("\n\n\n")
+			c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Merchant not found "})
 			return
 		}
 	}
 
-	// if the user is not found
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "enter valid credentials"})
+	row = database.Db.QueryRow("SELECT * FROM merchant WHERE id = ?", merchantCred.ID)
+
+	if err := row.Scan(&merchantSession.Credentials.ID, &merchantSession.CompanyName, &merchantSession.Email, &merchantSession.MerchantAddress, &merchantSession.DiscountOffered); err != nil {
+		if err == sql.ErrNoRows {
+			// if the merchant is not found
+			fmt.Println("\n\n\n")
+			fmt.Println(err)
+			fmt.Println("\n\n\n")
+
+			c.IndentedJSON(http.StatusNotFound, gin.H{"message": "merchant not found"})
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusFound, gin.H{"message": "login successful.\nWelcome " + merchantSession.CompanyName})
+	return
 
 }
 
 func MerchantLogout(c *gin.Context) {
-
+	if merchantSession.Credentials.ID != 0 {
+		merchantSession = models.Merchant{}
+		c.IndentedJSON(http.StatusOK, gin.H{"message": "Session deleted. User Logged out"})
+		return
+	}
+	c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Session empty. Plz Log in first"})
 }
 
 func MerchantUpload(c *gin.Context) {
@@ -57,7 +98,7 @@ func MerchantUpload(c *gin.Context) {
 	}
 
 	for _, val := range MerchantList {
-		if val.Credentials.UserID == product.MerchantID {
+		if val.Credentials.ID == product.MerchantID {
 			merchant = val
 			found = true
 		}
@@ -82,7 +123,7 @@ func MerchantUpdate(c *gin.Context) {
 	updatedPrice := product.Price
 
 	for _, val := range MerchantList {
-		if val.Credentials.UserID == product.MerchantID {
+		if val.Credentials.ID == product.MerchantID {
 			merchant = val
 			found = true
 		}
@@ -90,7 +131,7 @@ func MerchantUpdate(c *gin.Context) {
 
 	if found {
 		for index, val := range merchant.Products {
-			if val.ID == product.ID {
+			if val.ProductID == product.ProductID {
 				merchant.Products[index].Price = updatedPrice
 				c.IndentedJSON(http.StatusFound, merchant)
 			}

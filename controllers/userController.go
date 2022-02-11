@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"GoBazaar/database"
 	"GoBazaar/models"
+	"database/sql"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func UserRegister(c *gin.Context) {
@@ -15,44 +17,68 @@ func UserRegister(c *gin.Context) {
 	if err := c.BindJSON(&newUser); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, UserList)
 	} else {
-		newUser.Credentials.UserID = uuid.New().String()
-		newUser.Credentials.UserPass = "Pass123"
-		UserList = append(UserList, newUser)
+		newUser.Credentials.Pass = "Pass123"
+	}
+
+	result, err := database.Db.Exec("INSERT INTO user (first_name, last_name,email,contact,city,wallet_balance) VALUES (?, ?, ?, ?, ?, ?)", newUser.FirstName, newUser.LastName, newUser.Email, newUser.Contact, newUser.City, newUser.WalletBalance)
+	if err != nil {
+		c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "error adding into database user"})
+		return
+	}
+	id, err := result.LastInsertId()
+
+	newUser.Credentials.ID = int(id)
+	result, err = database.Db.Exec("INSERT INTO userCreds (id,pass) VALUES (?, ?)", newUser.Credentials.ID, newUser.Credentials.Pass)
+	if err != nil {
+		c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "error adding into database userCred"})
+		return
 	}
 
 	// code to insert into the database
-	c.IndentedJSON(http.StatusCreated, UserList)
+	c.IndentedJSON(http.StatusCreated, newUser)
 }
 
 func UserLogin(c *gin.Context) {
-	var userCred models.Cred
+	var userCred models.UserCred
 	if err := c.BindJSON(&userCred); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, err)
 	}
 
 	// code to find the usesr in database
-	for _, val := range UserList {
-		if val.Credentials.UserID == userCred.UserID && val.Credentials.UserPass == userCred.UserPass {
-			// if the user is found
-			session = val
-			c.IndentedJSON(http.StatusFound, gin.H{"message": "User logged in. Session created"})
-			return
 
+	row := database.Db.QueryRow("SELECT * FROM userCreds WHERE id = ? AND pass = \"?\"", userCred.ID, userCred.Pass)
+	fmt.Println(row)
+	if err := row.Scan(&userSession.Credentials.ID, &userSession.Credentials.Pass); err != nil {
+		if err == sql.ErrNoRows {
+			// if the user is not found
+			c.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
+			return
 		}
 	}
 
-	// if the user is not found
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
+	row = database.Db.QueryRow("SELECT * FROM user WHERE id = ?", userCred.ID)
+
+	if err := row.Scan(&userSession.Credentials.ID, &userSession.FirstName, &userSession.LastName, &userSession.Email, &userSession.Contact, &userSession.City, &userSession.WalletBalance); err != nil {
+		if err == sql.ErrNoRows {
+			// if the user is not found
+			c.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
+			return
+		}
+	}
+
+	c.IndentedJSON(http.StatusFound, gin.H{"message": "login successful.\nWelcome " + userSession.FirstName})
+	return
 
 }
 
 func UserLogout(c *gin.Context) {
-	if session.Credentials.UserID != "" {
-		session = models.User{}
+	if userSession.Credentials.ID != 0 {
+		userSession = models.User{}
 		c.IndentedJSON(http.StatusOK, gin.H{"message": "Session deleted. User Logged out"})
 		return
 	}
 	c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Session empty. Plz Log in first"})
+
 }
 
 func UserCart(c *gin.Context) {
@@ -72,39 +98,39 @@ func UserPurchase(c *gin.Context) {
 	// deduct the amount from the user wallet
 	// reduce the stock of the product by one
 
-	var product models.Product
+	//var product models.Product
 	//var merchant models.Merchant
-	var discount float64
+	//var discount float64
+	/*
+		if session.Credentials.ID != "" {
+			if err := c.BindJSON(&product); err != nil {
+				c.IndentedJSON(http.StatusBadRequest, err)
+			}
 
-	if session.Credentials.UserID != "" {
-		if err := c.BindJSON(&product); err != nil {
-			c.IndentedJSON(http.StatusBadRequest, err)
-		}
+			for _, val := range ProductList {
+				if val.ProductID == product.ProductID {
+					for _, m := range MerchantList {
+						if m.Credentials.ID == product.MerchantID {
+							discount = m.DiscountOffered
+							netPrice := product.Price - discount
+							if session.WalletBalance > netPrice {
+								session.WalletBalance = session.WalletBalance - netPrice
+								c.IndentedJSON(http.StatusAccepted, gin.H{"message": "Thanks for the purchase. Plz visit again"})
+								return
+							}
 
-		for _, val := range ProductList {
-			if val.ID == product.ID {
-				for _, m := range MerchantList {
-					if m.Credentials.UserID == product.MerchantID {
-						discount = m.DiscountOffered
-						netPrice := product.Price - discount
-						if session.WalletBalance > netPrice {
-							session.WalletBalance = session.WalletBalance - netPrice
-							c.IndentedJSON(http.StatusAccepted, gin.H{"message": "Thanks for the purchase. Plz visit again"})
+							c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "Not enough balance. Plz recharge your wallet"})
 							return
+
 						}
-
-						c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "Not enough balance. Plz recharge your wallet"})
-						return
-
 					}
 				}
 			}
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "product not found"})
 		}
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "product not found"})
-	}
 
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Session Emplty.Plz log in first"})
-
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Session Emplty.Plz log in first"})
+	*/
 }
 
 //make the user enter three letters
@@ -122,7 +148,7 @@ func UserSearch(c *gin.Context) {
 			searchResult = append(searchResult, val)
 		}
 
-		if strings.Contains(val.Description, letter1) && strings.Contains(val.Description, letter2) && strings.Contains(val.Description, letter3) {
+		if strings.Contains(val.ProductDescription, letter1) && strings.Contains(val.ProductDescription, letter2) && strings.Contains(val.ProductDescription, letter3) {
 			searchResult = append(searchResult, val)
 		}
 

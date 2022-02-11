@@ -1,5 +1,8 @@
 package controllers
 
-import "GoBazaar/structs"
+import (
+	"GoBazaar/models"
+)
 
-var session structs.Session
+var userSession models.User
+var merchantSession models.Merchant
