@@ -91,25 +91,34 @@ func MerchantLogout(c *gin.Context) {
 
 func MerchantUpload(c *gin.Context) {
 	var product models.Product
-	var merchant models.Merchant
-	var found bool = false
+
 	if err := c.BindJSON(&product); err != nil {
+		fmt.Println("\n\n\n")
+		fmt.Println(err)
+		fmt.Println("\n\n\n")
+
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid input"})
+		return
 	}
+	if merchantSession.CompanyName != "" {
+		product.MerchantID = merchantSession.Credentials.ID
+		_, err := database.Db.Exec("INSERT INTO product (merchantID,namel,product_description,price,stock) VALUES (?, ?, ?, ?, ?) ", product.MerchantID, product.Name, product.ProductDescription, product.Price, product.Stock)
 
-	for _, val := range MerchantList {
-		if val.Credentials.ID == product.MerchantID {
-			merchant = val
-			found = true
+		if err != nil {
+
+			c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "error adding into database product"})
+			return
 		}
-	}
 
-	if found {
-		merchant.Products = append(merchant.Products, product)
-		c.IndentedJSON(http.StatusCreated, merchant)
-	}
+		merchantSession.Products = append(merchantSession.Products, product)
 
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "merchant not found"})
+		c.IndentedJSON(http.StatusCreated, gin.H{"message": "product uploaded. Dhanda Kaayam rhe!!!"})
+		return
+
+	} else {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "No merchant logged in"})
+		return
+	}
 
 }
 

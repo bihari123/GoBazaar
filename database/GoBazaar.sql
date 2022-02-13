@@ -13,6 +13,7 @@ CREATE TABLE user (
 );
 
 DROP TABLE IF EXISTS userCreds;
+
 CREATE TABLE userCreds (
   id         INT NOT NULL,
   pass      VARCHAR(128) NOT NULL,

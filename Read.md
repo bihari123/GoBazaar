@@ -51,7 +51,7 @@ curl http://localhost:8080/user/login \
 curl http://localhost:8080/user/logout
 
 # user purchase
-curl http://localhost:8080/user/login \
+curl http://localhost:8080/user/purchase \
      --include \
      --header "Content-Type: application/json"  \
      --request "POST" \
@@ -72,3 +72,19 @@ curl http://localhost:8080/merchant/login \
      --header "Content-Type: application/json"  \
      --request "POST" \
      --data '{"Id":1 ,"Pass":"Pass123"}'
+
+
+# merchant upload
+curl http://localhost:8080/merchant/upload \
+     --include \
+     --header "Content-Type: application/json"  \
+     --request "POST" \
+     --data '{"Id":1 ,"Pass":"Pass123"}'     
+
+     ProductID          int           `json:"product_id"`
+	MerchantID         int           `json:"merchant_id"`
+	Name               string        `json:"name"`
+	ProductDescription string        `json:"product_description"`
+	Price              float64       `json:"price"`
+	Stock              int           `json:"stock"`
+	DeliveryTime       time.Duration `json:"deliveryTime"`

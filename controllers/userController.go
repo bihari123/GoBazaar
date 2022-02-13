@@ -98,39 +98,67 @@ func UserPurchase(c *gin.Context) {
 	// deduct the amount from the user wallet
 	// reduce the stock of the product by one
 
-	//var product models.Product
-	//var merchant models.Merchant
-	//var discount float64
-	/*
-		if session.Credentials.ID != "" {
-			if err := c.BindJSON(&product); err != nil {
-				c.IndentedJSON(http.StatusBadRequest, err)
-			}
-
-			for _, val := range ProductList {
-				if val.ProductID == product.ProductID {
-					for _, m := range MerchantList {
-						if m.Credentials.ID == product.MerchantID {
-							discount = m.DiscountOffered
-							netPrice := product.Price - discount
-							if session.WalletBalance > netPrice {
-								session.WalletBalance = session.WalletBalance - netPrice
-								c.IndentedJSON(http.StatusAccepted, gin.H{"message": "Thanks for the purchase. Plz visit again"})
-								return
-							}
-
-							c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "Not enough balance. Plz recharge your wallet"})
-							return
-
-						}
-					}
-				}
-			}
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "product not found"})
+	var product models.Product
+	var merchant models.Merchant
+	if userSession.FirstName != "" {
+		if err := c.BindJSON(&product); err != nil {
+			c.IndentedJSON(http.StatusBadRequest, err)
 		}
 
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Session Emplty.Plz log in first"})
-	*/
+		row := database.Db.QueryRow("SELECT * FROM product WHERE id = ?", product.ProductID)
+
+		if err := row.Scan(&product.ProductID, &product.MerchantID, &product.Name, &product.ProductDescription, &product.Price, &product.Stock); err != nil {
+			if err == sql.ErrNoRows {
+				// if the user is not found
+				fmt.Println("\n\n\n")
+				fmt.Println(err)
+				fmt.Println("\n\n\n")
+				c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Product not found"})
+				return
+			}
+		}
+
+		row = database.Db.QueryRow("SELECT * FROM merchant WHERE id = ?", product.MerchantID)
+
+		if err := row.Scan(&merchant.Credentials.ID, &merchant.CompanyName, &merchant.Email, &merchant.MerchantAddress, &merchant.DiscountOffered); err != nil {
+			if err == sql.ErrNoRows {
+				// if the user is not found
+				fmt.Println("\n\n\n")
+				fmt.Println(err)
+				fmt.Println("\n\n\n")
+				c.IndentedJSON(http.StatusNotFound, gin.H{"message": "merchant not found"})
+				return
+			}
+		}
+		discount := merchant.DiscountOffered
+		netPrice := product.Price - discount
+
+		walletBalace := userSession.WalletBalance
+
+		if walletBalace > netPrice {
+			userSession.WalletBalance = walletBalace - netPrice
+			_, err := database.Db.Exec("UPDATE user SET wallet_balance = ? WHERE id = ?", userSession.WalletBalance, userSession.Credentials.ID)
+			product.Stock -= 1
+			if err != nil {
+				c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "error updating the user wallet balance"})
+				return
+			}
+			_, err = database.Db.Exec("UPDATE product SET stock= ? WHERE id = ?", product.Stock, product.ProductID)
+
+			if err != nil {
+				c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "error updating the product stock"})
+				return
+			}
+			c.IndentedJSON(http.StatusOK, gin.H{"message": "Item Purchased"})
+			return
+		}
+		c.IndentedJSON(http.StatusConflict, gin.H{"message": "Not Enough Balance. Plz recharge your wallet"})
+		return
+
+	}
+	c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "there is no active session for user"})
+	return
+
 }
 
 //make the user enter three letters
